@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Inventario - Login</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📦</text></svg>">
+</head>
+<body>
+    <div class="container">
+        <div class="login-container">
+            <div class="login-header">
+                <div class="logo">
+                    <span class="logo-icon">📦</span>
+                    <h1>Sistema de Inventario</h1>
+                </div>
+                <p class="subtitle">TP Integrador de Redes y Comunicación</p>
+            </div>
+
+            <form id="loginForm" class="login-form">
+                <div class="form-group">
+                    <label for="username">Usuario</label>
+                    <input 
+                        type="text" 
+                        id="username" 
+                        name="username" 
+                        required 
+                        autocomplete="username"
+                        placeholder="Ingrese su nombre de usuario"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Contraseña</label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        required 
+                        autocomplete="current-password"
+                        placeholder="Ingrese su contraseña"
+                    >
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-login">
+                    <span class="btn-text">Iniciar Sesión</span>
+                    <span class="btn-loading" style="display: none;">
+                        <div class="spinner"></div>
+                        Iniciando...
+                    </span>
+                </button>
+            </form>
+
+            <div id="errorMessage" class="error-message" style="display: none;"></div>
+
+            <div class="login-footer">
+                <div class="demo-credentials">
+                    <h3>Credenciales de Prueba</h3>
+                    <div class="credential-cards">
+                        <div class="credential-card admin">
+                            <div class="credential-header">
+                                <span class="role-icon">👑</span>
+                                <span class="role-name">Administrador</span>
+                            </div>
+                            <div class="credential-details">
+                                <p><strong>Usuario:</strong> admin</p>
+                                <p><strong>Contraseña:</strong> admin123</p>
+                                <p><strong>Acceso:</strong> CRUD completo</p>
+                            </div>
+                        </div>
+                        <div class="credential-card viewer">
+                            <div class="credential-header">
+                                <span class="role-icon">👁️</span>
+                                <span class="role-name">Visualizador</span>
+                            </div>
+                            <div class="credential-details">
+                                <p><strong>Usuario:</strong> viewer</p>
+                                <p><strong>Contraseña:</strong> viewer123</p>
+                                <p><strong>Acceso:</strong> Solo lectura</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="system-info">
+                <p><strong>Servidor:</strong> <span id="serverStatus">Verificando...</span></p>
+                <p><strong>Versión:</strong> 1.0.0</p>
+                <p><strong>Entorno:</strong> <span id="environment">Desarrollo</span></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/ui.js"></script>
+    <script>
+        // Inicialización de la página de login
+        document.addEventListener("DOMContentLoaded", function() {
+            // Verificar estado del servidor
+            checkServerHealth();
+            
+            // Configurar formulario de login
+            setupLoginForm();
+        });
+
+        function checkServerHealth() {
+            fetch("/api/health")
+                .then(response => {
+                    if (response.ok) {
+                        document.getElementById("serverStatus").textContent = "🟢 Conectado";
+                        document.getElementById("serverStatus").className = "status-connected";
+                    } else {
+                        document.getElementById("serverStatus").textContent = "🔴 Error";
+                        document.getElementById("serverStatus").className = "status-error";
+                    }
+                })
+                .catch(error => {
+                    document.getElementById("serverStatus").textContent = "🔴 Sin conexión";
+                    document.getElementById("serverStatus").className = "status-error";
+                    console.error("Error al conectar con el servidor:", error);
+                });
+        }
+
+        function setupLoginForm() {
+            const form = document.getElementById("loginForm");
+            const errorMessage = document.getElementById("errorMessage");
+
+            form.addEventListener("submit", async function(e) {
+                e.preventDefault();
+                
+                const username = document.getElementById("username").value.trim();
+                const password = document.getElementById("password").value;
+                
+                // Validación básica del lado del cliente
+                if (!username || !password) {
+                    showError("Por favor complete todos los campos");
+                    return;
+                }
+
+                // Mostrar estado de carga
+                setLoadingState(true);
+                hideError();
+
+                try {
+                    const response = await login(username, password);
+                    
+                    if (response.success) {
+                        // Redirigir al inventario
+                        window.location.href = "inventario.html";
+                    } else {
+                        showError(response.error || "Error al iniciar sesión");
+                    }
+                } catch (error) {
+                    console.error("Error en login:", error);
+                    showError("Error de conexión con el servidor");
+                } finally {
+                    setLoadingState(false);
+                }
+            });
+        }
+
+        function setLoadingState(loading) {
+            const btnText = document.querySelector(".btn-text");
+            const btnLoading = document.querySelector(".btn-loading");
+            const btn = document.querySelector(".btn-login");
+
+            if (loading) {
+                btnText.style.display = "none";
+                btnLoading.style.display = "flex";
+                btn.disabled = true;
+            } else {
+                btnText.style.display = "block";
+                btnLoading.style.display = "none";
+                btn.disabled = false;
+            }
+        }
+
+        function showError(message) {
+            const errorMessage = document.getElementById("errorMessage");
+            errorMessage.textContent = message;
+            errorMessage.style.display = "block";
+            
+            // Ocultar error después de 5 segundos
+            setTimeout(() => {
+                hideError();
+            }, 5000);
+        }
+
+        function hideError() {
+            const errorMessage = document.getElementById("errorMessage");
+            errorMessage.style.display = "none";
+        }
+    </script>
+</body>
+</html>

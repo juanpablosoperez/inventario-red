@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Inventario - Gestión de Productos</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📦</text></svg>">
+</head>
+<body>
+    <div class="container">
+        <!-- Header de la aplicación -->
+        <header class="app-header">
+            <div class="header-content">
+                <div class="header-left">
+                    <h1>📦 Sistema de Inventario</h1>
+                    <p class="header-subtitle">TP Integrador de Redes y Comunicación</p>
+                </div>
+                <div class="header-right">
+                    <div class="user-info">
+                        <span class="user-role" id="userRole">👤</span>
+                        <span class="username" id="username">Usuario</span>
+                    </div>
+                    <button id="logoutBtn" class="btn btn-secondary btn-logout">
+                        🚪 Salir
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Contenido principal -->
+        <main class="main-content">
+            <!-- Panel de estadísticas -->
+            <section class="stats-panel">
+                <div class="stat-card">
+                    <div class="stat-icon">📦</div>
+                    <div class="stat-content">
+                        <h3>Total Productos</h3>
+                        <p id="totalProducts">-</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🔢</div>
+                    <div class="stat-content">
+                        <h3>Total Cantidad</h3>
+                        <p id="totalQuantity">-</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">💰</div>
+                    <div class="stat-content">
+                        <h3>Valor Total</h3>
+                        <p id="totalValue">-</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Panel de búsqueda y filtros -->
+            <section class="search-panel">
+                <div class="search-container">
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        class="search-input" 
+                        placeholder="Buscar productos por nombre o SKU..."
+                    >
+                    <button id="searchBtn" class="btn btn-primary">
+                        🔍 Buscar
+                    </button>
+                </div>
+                <div class="filter-container">
+                    <select id="sortSelect" class="filter-select">
+                        <option value="name">Ordenar por Nombre</option>
+                        <option value="sku">Ordenar por SKU</option>
+                        <option value="qty">Ordenar por Cantidad</option>
+                        <option value="price">Ordenar por Precio</option>
+                    </select>
+                </div>
+            </section>
+
+            <!-- Panel de acciones (solo admin) -->
+            <section id="adminPanel" class="admin-panel" style="display: none;">
+                <div class="admin-actions">
+                    <button id="addProductBtn" class="btn btn-success">
+                        ➕ Agregar Producto
+                    </button>
+                    <button id="exportBtn" class="btn btn-info">
+                        📊 Exportar
+                    </button>
+                </div>
+            </section>
+
+            <!-- Tabla de productos -->
+            <section class="products-section">
+                <div class="table-container">
+                    <table id="productsTable" class="products-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>SKU</th>
+                                <th>Nombre</th>
+                                <th>Cantidad</th>
+                                <th>Precio</th>
+                                <th>Valor Total</th>
+                                <th>Última Modificación</th>
+                                <th id="actionsHeader" style="display: none;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productsTableBody">
+                            <tr>
+                                <td colspan="8" class="loading-message">
+                                    <div class="spinner"></div>
+                                    Cargando productos...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+
+        <!-- Modal para agregar/editar producto -->
+        <div id="productModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="modalTitle">Agregar Producto</h2>
+                    <button id="closeModalBtn" class="modal-close">&times;</button>
+                </div>
+                <form id="productForm" class="product-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="modalSku">SKU *</label>
+                            <input 
+                                type="text" 
+                                id="modalSku" 
+                                name="sku" 
+                                required 
+                                pattern="[A-Z0-9]+"
+                                placeholder="Ej: LAP001"
+                                maxlength="20"
+                            >
+                            <small>Formato: Solo letras mayúsculas y números</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="modalName">Nombre *</label>
+                            <input 
+                                type="text" 
+                                id="modalName" 
+                                name="name" 
+                                required 
+                                placeholder="Nombre del producto"
+                                maxlength="100"
+                            >
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="modalQty">Cantidad *</label>
+                            <input 
+                                type="number" 
+                                id="modalQty" 
+                                name="qty" 
+                                required 
+                                min="0" 
+                                max="999999"
+                                placeholder="0"
+                            >
+                        </div>
+                        <div class="form-group">
+                            <label for="modalPrice">Precio *</label>
+                            <input 
+                                type="number" 
+                                id="modalPrice" 
+                                name="price" 
+                                required 
+                                min="0" 
+                                step="0.01"
+                                max="999999.99"
+                                placeholder="0.00"
+                            >
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" id="cancelBtn" class="btn btn-secondary">
+                            Cancelar
+                        </button>
+                        <button type="submit" id="saveBtn" class="btn btn-primary">
+                            <span class="btn-text">Guardar</span>
+                            <span class="btn-loading" style="display: none;">
+                                <div class="spinner"></div>
+                                Guardando...
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal de confirmación para eliminar -->
+        <div id="deleteModal" class="modal" style="display: none;">
+            <div class="modal-content delete-modal">
+                <div class="modal-header">
+                    <h2>Confirmar Eliminación</h2>
+                    <button id="closeDeleteModalBtn" class="modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p>¿Está seguro que desea eliminar el producto <strong id="deleteProductName">-</strong>?</p>
+                    <p class="warning">⚠️ Esta acción no se puede deshacer.</p>
+                </div>
+                <div class="modal-actions">
+                    <button id="cancelDeleteBtn" class="btn btn-secondary">
+                        Cancelar
+                    </button>
+                    <button id="confirmDeleteBtn" class="btn btn-danger">
+                        🗑️ Eliminar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notificaciones -->
+        <div id="notificationContainer" class="notification-container"></div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/ui.js"></script>
+    <script>
+        // Variables globales
+        let currentUser = null;
+        let products = [];
+        let editingProductId = null;
+
+        // Inicialización de la página
+        document.addEventListener("DOMContentLoaded", function() {
+            // Verificar autenticación
+            checkAuthentication();
+            
+            // Configurar eventos
+            setupEventListeners();
+            
+            // Cargar productos
+            loadProducts();
+        });
+
+        async function checkAuthentication() {
+            try {
+                const response = await getCurrentUser();
+                if (response.success) {
+                    currentUser = response.user;
+                    updateUserInterface();
+                } else {
+                    // Redirigir al login si no está autenticado
+                    window.location.href = "index.html";
+                }
+            } catch (error) {
+                console.error("Error al verificar autenticación:", error);
+                window.location.href = "index.html";
+            }
+        }
+
+        function updateUserInterface() {
+            // Actualizar información del usuario
+            document.getElementById("username").textContent = currentUser.username;
+            document.getElementById("userRole").textContent = currentUser.role === "admin" ? "👑" : "👁️";
+            
+            // Mostrar/ocultar panel de admin
+            const adminPanel = document.getElementById("adminPanel");
+            const actionsHeader = document.getElementById("actionsHeader");
+            
+            if (currentUser.role === "admin") {
+                adminPanel.style.display = "block";
+                actionsHeader.style.display = "table-cell";
+            } else {
+                adminPanel.style.display = "none";
+                actionsHeader.style.display = "none";
+            }
+        }
+
+        function setupEventListeners() {
+            // Botón de logout
+            document.getElementById("logoutBtn").addEventListener("click", handleLogout);
+            
+            // Búsqueda
+            document.getElementById("searchBtn").addEventListener("click", handleSearch);
+            document.getElementById("searchInput").addEventListener("keypress", function(e) {
+                if (e.key === "Enter") handleSearch();
+            });
+            
+            // Ordenamiento
+            document.getElementById("sortSelect").addEventListener("change", handleSort);
+            
+            // Botones de admin
+            document.getElementById("addProductBtn").addEventListener("click", showAddProductModal);
+            document.getElementById("exportBtn").addEventListener("click", handleExport);
+            
+            // Modal de producto
+            document.getElementById("closeModalBtn").addEventListener("click", hideProductModal);
+            document.getElementById("cancelBtn").addEventListener("click", hideProductModal);
+            document.getElementById("productForm").addEventListener("submit", handleProductSubmit);
+            
+            // Modal de eliminación
+            document.getElementById("closeDeleteModalBtn").addEventListener("click", hideDeleteModal);
+            document.getElementById("cancelDeleteBtn").addEventListener("click", hideDeleteModal);
+            document.getElementById("confirmDeleteBtn").addEventListener("click", handleDeleteConfirm);
+        }
+
+        async function loadProducts() {
+            try {
+                showLoadingState();
+                const response = await getProducts();
+                
+                if (response.success) {
+                    products = response.products;
+                    updateProductsTable();
+                    updateStats(response.summary);
+                } else {
+                    showNotification("Error al cargar productos: " + response.error, "error");
+                }
+            } catch (error) {
+                console.error("Error al cargar productos:", error);
+                showNotification("Error de conexión al cargar productos", "error");
+            } finally {
+                hideLoadingState();
+            }
+        }
+
+        function updateProductsTable() {
+            const tbody = document.getElementById("productsTableBody");
+            tbody.innerHTML = "";
+
+            if (products.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="no-products">
+                            No se encontraron productos
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            products.forEach(product => {
+                const row = createProductRow(product);
+                tbody.appendChild(row);
+            });
+        }
+
+        function createProductRow(product) {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${product.id}</td>
+                <td><span class="sku">${product.sku}</span></td>
+                <td>${escapeHtml(product.name)}</td>
+                <td>${product.qty}</td>
+                <td>$${formatPrice(product.price)}</td>
+                <td>$${formatPrice(product.qty * product.price)}</td>
+                <td>${formatDate(product.updated_at)}</td>
+                <td class="actions-cell" style="display: ${currentUser.role === "admin" ? "table-cell" : "none"}">
+                    <button class="btn btn-sm btn-primary edit-btn" data-id="${product.id}">
+                        ✏️ Editar
+                    </button>
+                    <button class="btn btn-sm btn-danger delete-btn" data-id="${product.id}">
+                        🗑️ Eliminar
+                    </button>
+                </td>
+            `;
+
+            // Agregar eventos a los botones de acción
+            if (currentUser.role === "admin") {
+                row.querySelector(".edit-btn").addEventListener("click", () => showEditProductModal(product));
+                row.querySelector(".delete-btn").addEventListener("click", () => showDeleteModal(product));
+            }
+
+            return row;
+        }
+
+        function updateStats(summary) {
+            document.getElementById("totalProducts").textContent = summary.totalProducts;
+            document.getElementById("totalQuantity").textContent = summary.totalQuantity;
+            document.getElementById("totalValue").textContent = `$${formatPrice(summary.totalValue)}`;
+        }
+
+        function handleSearch() {
+            const query = document.getElementById("searchInput").value.trim();
+            if (query) {
+                searchProducts(query);
+            } else {
+                loadProducts();
+            }
+        }
+
+        async function searchProducts(query) {
+            try {
+                showLoadingState();
+                const response = await searchProductsAPI(query);
+                
+                if (response.success) {
+                    products = response.products;
+                    updateProductsTable();
+                    updateStats({
+                        totalProducts: response.totalResults,
+                        totalQuantity: products.reduce((sum, p) => sum + p.qty, 0),
+                        totalValue: products.reduce((sum, p) => sum + (p.qty * p.price), 0)
+                    });
+                } else {
+                    showNotification("Error en la búsqueda: " + response.error, "error");
+                }
+            } catch (error) {
+                console.error("Error en búsqueda:", error);
+                showNotification("Error de conexión en la búsqueda", "error");
+            } finally {
+                hideLoadingState();
+            }
+        }
+
+        function handleSort() {
+            const sortBy = document.getElementById("sortSelect").value;
+            
+            products.sort((a, b) => {
+                switch (sortBy) {
+                    case "name":
+                        return a.name.localeCompare(b.name);
+                    case "sku":
+                        return a.sku.localeCompare(b.sku);
+                    case "qty":
+                        return a.qty - b.qty;
+                    case "price":
+                        return a.price - b.price;
+                    default:
+                        return 0;
+                }
+            });
+            
+            updateProductsTable();
+        }
+
+        function showAddProductModal() {
+            editingProductId = null;
+            document.getElementById("modalTitle").textContent = "Agregar Producto";
+            document.getElementById("productForm").reset();
+            document.getElementById("modalSku").disabled = false;
+            showProductModal();
+        }
+
+        function showEditProductModal(product) {
+            editingProductId = product.id;
+            document.getElementById("modalTitle").textContent = "Editar Producto";
+            document.getElementById("modalSku").value = product.sku;
+            document.getElementById("modalSku").disabled = true;
+            document.getElementById("modalName").value = product.name;
+            document.getElementById("modalQty").value = product.qty;
+            document.getElementById("modalPrice").value = product.price;
+            showProductModal();
+        }
+
+        function showProductModal() {
+            document.getElementById("productModal").style.display = "block";
+        }
+
+        function hideProductModal() {
+            document.getElementById("productModal").style.display = "none";
+            editingProductId = null;
+        }
+
+        async function handleProductSubmit(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const productData = {
+                sku: formData.get("sku"),
+                name: formData.get("name"),
+                qty: parseInt(formData.get("qty")),
+                price: parseFloat(formData.get("price"))
+            };
+
+            try {
+                setSaveButtonLoading(true);
+                
+                let response;
+                if (editingProductId) {
+                    response = await updateProduct(editingProductId, productData);
+                } else {
+                    response = await createProduct(productData);
+                }
+
+                if (response.success) {
+                    showNotification(
+                        editingProductId ? "Producto actualizado correctamente" : "Producto creado correctamente",
+                        "success"
+                    );
+                    hideProductModal();
+                    loadProducts();
+                } else {
+                    showNotification("Error: " + response.error, "error");
+                }
+            } catch (error) {
+                console.error("Error al guardar producto:", error);
+                showNotification("Error de conexión al guardar", "error");
+            } finally {
+                setSaveButtonLoading(false);
+            }
+        }
+
+        function showDeleteModal(product) {
+            document.getElementById("deleteProductName").textContent = product.name;
+            document.getElementById("deleteModal").style.display = "block";
+        }
+
+        function hideDeleteModal() {
+            document.getElementById("deleteModal").style.display = "none";
+        }
+
+        async function handleDeleteConfirm() {
+            try {
+                const response = await deleteProduct(editingProductId);
+                
+                if (response.success) {
+                    showNotification("Producto eliminado correctamente", "success");
+                    hideDeleteModal();
+                    loadProducts();
+                } else {
+                    showNotification("Error al eliminar: " + response.error, "error");
+                }
+            } catch (error) {
+                console.error("Error al eliminar producto:", error);
+                showNotification("Error de conexión al eliminar", "error");
+            }
+        }
+
+        async function handleLogout() {
+            try {
+                await logout();
+                window.location.href = "index.html";
+            } catch (error) {
+                console.error("Error al cerrar sesión:", error);
+                // Forzar redirección
+                window.location.href = "index.html";
+            }
+        }
+
+        function handleExport() {
+            // Implementar exportación (CSV, Excel, etc.)
+            showNotification("Función de exportación en desarrollo", "info");
+        }
+
+        function setSaveButtonLoading(loading) {
+            const btnText = document.querySelector("#saveBtn .btn-text");
+            const btnLoading = document.querySelector("#saveBtn .btn-loading");
+            const btn = document.getElementById("saveBtn");
+
+            if (loading) {
+                btnText.style.display = "none";
+                btnLoading.style.display = "flex";
+                btn.disabled = true;
+            } else {
+                btnText.style.display = "block";
+                btnLoading.style.display = "none";
+                btn.disabled = false;
+            }
+        }
+
+        function showLoadingState() {
+            const tbody = document.getElementById("productsTableBody");
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="loading-message">
+                        <div class="spinner"></div>
+                        Cargando productos...
+                    </td>
+                </tr>
+            `;
+        }
+
+        function hideLoadingState() {
+            // El estado se oculta cuando se actualiza la tabla
+        }
+
+        // Funciones de utilidad
+        function escapeHtml(text) {
+            const div = document.createElement("div");
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatPrice(price) {
+            return parseFloat(price).toFixed(2);
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString("es-ES", {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit"
+            });
+        }
+
+        function showNotification(message, type = "info") {
+            const container = document.getElementById("notificationContainer");
+            const notification = document.createElement("div");
+            notification.className = `notification notification-${type}`;
+            notification.textContent = message;
+            
+            container.appendChild(notification);
+            
+            // Auto-ocultar después de 5 segundos
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
