@@ -7,8 +7,14 @@ import express from "express";
 import session from "express-session";
 import helmet from "helmet";
 import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 import authRoutes from "./routes/auth.js";
 import productRoutes from "./routes/products.js";
+
+// Obtener la ruta del directorio actual
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Cargar variables de entorno
 dotenv.config();
@@ -150,6 +156,34 @@ app.get("/api/info", (req, res) => {
 // Aplicar rutas de la API
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
+
+// Servir archivos estáticos del frontend
+const frontendPath = path.resolve(__dirname, "../../frontend");
+app.use(express.static(frontendPath));
+
+// Ruta para la página principal
+app.get("/", (req, res) => {
+    const indexPath = path.resolve(__dirname, "../../frontend/index.html");
+    res.sendFile(indexPath);
+});
+
+// Ruta para la página de inventario
+app.get("/inventario", (req, res) => {
+    const inventarioPath = path.resolve(__dirname, "../../frontend/inventario.html");
+    res.sendFile(inventarioPath);
+});
+
+// Ruta para la página de prueba de login
+app.get("/test-login", (req, res) => {
+    const testPath = path.resolve(__dirname, "../../frontend/test-login.html");
+    res.sendFile(testPath);
+});
+
+// Ruta para la página de prueba simple
+app.get("/test-simple", (req, res) => {
+    const testSimplePath = path.resolve(__dirname, "../../frontend/test-simple.html");
+    res.sendFile(testSimplePath);
+});
 
 // Middleware para manejar rutas no encontradas
 app.use("/api/*", (req, res) => {
