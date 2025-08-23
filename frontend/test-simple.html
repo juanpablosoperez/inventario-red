@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Simple - Sistema de Inventario</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .form-group { margin: 20px 0; }
+        input, button { padding: 10px; margin: 5px; }
+        .error { color: red; }
+        .success { color: green; }
+        .info { color: blue; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Simple de Login</h1>
+    
+    <div id="status" class="info">Cargando...</div>
+    
+    <form id="loginForm">
+        <div class="form-group">
+            <label>Usuario: <input type="text" id="username" value="admin" required></label>
+        </div>
+        <div class="form-group">
+            <label>Contraseña: <input type="password" id="password" value="admin123" required></label>
+        </div>
+        <button type="submit">Iniciar Sesión</button>
+    </form>
+    
+    <div id="result"></div>
+    
+    <script src="js/api-simple.js"></script>
+    <script>
+        console.log("🚀 Página de prueba cargada");
+        
+        // Verificar que la API se cargó
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("📱 DOM cargado");
+            console.log("🔍 Verificando window.API:", window.API);
+            
+            if (window.API && window.API.login) {
+                document.getElementById('status').innerHTML = 
+                    '<span class="success">✅ API cargada correctamente</span>';
+                console.log("✅ API disponible:", window.API);
+            } else {
+                document.getElementById('status').innerHTML = 
+                    '<span class="error">❌ API no disponible</span>';
+                console.error("❌ API no disponible");
+            }
+        });
+        
+        // Configurar formulario
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            console.log("📝 Formulario enviado");
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            console.log("🔐 Intentando login con:", username);
+            
+            try {
+                const response = await window.API.login(username, password);
+                console.log("📊 Respuesta del login:", response);
+                
+                if (response.success) {
+                    document.getElementById('result').innerHTML = 
+                        `<div class="success">✅ Login exitoso! Usuario: ${response.data.user.username}</div>`;
+                    
+                    // Redirigir después de 2 segundos
+                    setTimeout(() => {
+                        window.location.href = 'inventario.html';
+                    }, 2000);
+                } else {
+                    document.getElementById('result').innerHTML = 
+                        `<div class="error">❌ Error: ${response.error}</div>`;
+                }
+                
+            } catch (error) {
+                console.error("💥 Error en el login:", error);
+                document.getElementById('result').innerHTML = 
+                    `<div class="error">💥 Error inesperado: ${error.message}</div>`;
+            }
+        });
+    </script>
+</body>
+</html>

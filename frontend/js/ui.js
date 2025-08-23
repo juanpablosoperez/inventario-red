@@ -12,7 +12,7 @@
  * @param {string} sku - SKU a validar
  * @returns {Object} Resultado de la validación
  */
-export function validateSKU(sku) {
+function validateSKU(sku) {
     if (!sku || sku.trim() === "") {
         return { valid: false, error: "El SKU es obligatorio" };
     }
@@ -33,7 +33,7 @@ export function validateSKU(sku) {
  * @param {string} name - Nombre a validar
  * @returns {Object} Resultado de la validación
  */
-export function validateProductName(name) {
+function validateProductName(name) {
     if (!name || name.trim() === "") {
         return { valid: false, error: "El nombre del producto es obligatorio" };
     }
@@ -50,7 +50,7 @@ export function validateProductName(name) {
  * @param {number} qty - Cantidad a validar
  * @returns {Object} Resultado de la validación
  */
-export function validateQuantity(qty) {
+function validateQuantity(qty) {
     if (qty === null || qty === undefined || isNaN(qty)) {
         return { valid: false, error: "La cantidad debe ser un número válido" };
     }
@@ -75,7 +75,7 @@ export function validateQuantity(qty) {
  * @param {number} price - Precio a validar
  * @returns {Object} Resultado de la validación
  */
-export function validatePrice(price) {
+function validatePrice(price) {
     if (price === null || price === undefined || isNaN(price)) {
         return { valid: false, error: "El precio debe ser un número válido" };
     }
@@ -96,7 +96,7 @@ export function validatePrice(price) {
  * @param {Object} productData - Datos del producto a validar
  * @returns {Object} Resultado de la validación
  */
-export function validateProductData(productData) {
+function validateProductData(productData) {
     const errors = [];
     
     // Validar SKU
@@ -139,7 +139,7 @@ export function validateProductData(productData) {
  * @param {string} currency - Moneda (por defecto USD)
  * @returns {string} Precio formateado
  */
-export function formatPrice(price, currency = "USD") {
+function formatPrice(price, currency = "USD") {
     if (price === null || price === undefined || isNaN(price)) {
         return "N/A";
     }
@@ -160,7 +160,7 @@ export function formatPrice(price, currency = "USD") {
  * @param {string} locale - Locale para el formateo
  * @returns {string} Fecha formateada
  */
-export function formatDate(date, locale = "es-ES") {
+function formatDate(date, locale = "es-ES") {
     if (!date) {
         return "N/A";
     }
@@ -191,7 +191,7 @@ export function formatDate(date, locale = "es-ES") {
  * @param {number} decimals - Decimales a mostrar
  * @returns {string} Número formateado
  */
-export function formatNumber(number, decimals = 0) {
+function formatNumber(number, decimals = 0) {
     if (number === null || number === undefined || isNaN(number)) {
         return "N/A";
     }
@@ -209,7 +209,7 @@ export function formatNumber(number, decimals = 0) {
  * @param {string} sku - SKU a formatear
  * @returns {string} SKU formateado
  */
-export function formatSKU(sku) {
+function formatSKU(sku) {
     if (!sku) {
         return "N/A";
     }
@@ -229,7 +229,7 @@ export function formatSKU(sku) {
  * @param {string} textContent - Contenido de texto
  * @returns {HTMLElement} Elemento creado
  */
-export function createElement(tag, attributes = {}, textContent = "") {
+function createElement(tag, attributes = {}, textContent = "") {
     const element = document.createElement(tag);
     
     // Aplicar atributos
@@ -257,7 +257,7 @@ export function createElement(tag, attributes = {}, textContent = "") {
  * @param {string} className - Clase CSS
  * @param {boolean} add - True para agregar, false para remover
  */
-export function toggleClass(element, className, add) {
+function toggleClass(element, className, add) {
     if (add) {
         element.classList.add(className);
     } else {
@@ -271,7 +271,7 @@ export function toggleClass(element, className, add) {
  * @param {boolean} show - True para mostrar, false para ocultar
  * @param {string} displayType - Tipo de display cuando se muestra
  */
-export function toggleElement(element, show, displayType = "block") {
+function toggleElement(element, show, displayType = "block") {
     if (show) {
         element.style.display = displayType;
     } else {
@@ -283,7 +283,7 @@ export function toggleElement(element, show, displayType = "block") {
  * Limpia el contenido de un elemento
  * @param {HTMLElement} element - Elemento a limpiar
  */
-export function clearElement(element) {
+function clearElement(element) {
     element.innerHTML = "";
 }
 
@@ -297,7 +297,7 @@ export function clearElement(element) {
  * @param {string} type - Tipo de notificación (success, error, warning, info)
  * @param {number} duration - Duración en milisegundos
  */
-export function showNotification(message, type = "info", duration = 5000) {
+function showNotification(message, type = "info", duration = 5000) {
     const container = document.getElementById("notificationContainer") || createNotificationContainer();
     
     const notification = createElement("div", {
@@ -351,7 +351,7 @@ function createNotificationContainer() {
  * @param {string} cancelText - Texto del botón de cancelación
  * @returns {Promise<boolean>} True si se confirma, false si se cancela
  */
-export function showConfirmModal(title, message, confirmText = "Confirmar", cancelText = "Cancelar") {
+function showConfirmModal(title, message, confirmText = "Confirmar", cancelText = "Cancelar") {
     return new Promise((resolve) => {
         const modal = createElement("div", {
             className: "modal confirm-modal"
@@ -421,7 +421,7 @@ export function showConfirmModal(title, message, confirmText = "Confirmar", canc
  * @param {string} text - Texto a escapar
  * @returns {string} Texto escapado
  */
-export function escapeHtml(text) {
+function escapeHtml(text) {
     if (typeof text !== "string") {
         return text;
     }
@@ -437,7 +437,7 @@ export function escapeHtml(text) {
  * @param {number} wait - Tiempo de espera en milisegundos
  * @returns {Function} Función con debounce
  */
-export function debounce(func, wait) {
+function debounce(func, wait) {
     let timeout;
     return function executedFunction(...args) {
         const later = () => {
@@ -455,7 +455,7 @@ export function debounce(func, wait) {
  * @param {number} limit - Límite de tiempo en milisegundos
  * @returns {Function} Función con throttle
  */
-export function throttle(func, limit) {
+function throttle(func, limit) {
     let inThrottle;
     return function() {
         const args = arguments;
@@ -472,7 +472,7 @@ export function throttle(func, limit) {
  * Genera un ID único
  * @returns {string} ID único
  */
-export function generateUniqueId() {
+function generateUniqueId() {
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
 }
 
@@ -481,7 +481,7 @@ export function generateUniqueId() {
  * @param {string} text - Texto a copiar
  * @returns {Promise<boolean>} True si se copió exitosamente
  */
-export async function copyToClipboard(text) {
+async function copyToClipboard(text) {
     try {
         if (navigator.clipboard && window.isSecureContext) {
             await navigator.clipboard.writeText(text);
@@ -513,7 +513,7 @@ export async function copyToClipboard(text) {
  * @param {string} filename - Nombre del archivo
  * @param {string} mimeType - Tipo MIME del archivo
  */
-export function downloadFile(content, filename, mimeType = "text/plain") {
+function downloadFile(content, filename, mimeType = "text/plain") {
     const blob = new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);
     
@@ -534,7 +534,7 @@ export function downloadFile(content, filename, mimeType = "text/plain") {
  * @param {string} feature - Característica a verificar
  * @returns {boolean} True si se soporta
  */
-export function isFeatureSupported(feature) {
+function isFeatureSupported(feature) {
     const features = {
         "fetch": typeof fetch !== "undefined",
         "localStorage": typeof localStorage !== "undefined",
@@ -552,7 +552,7 @@ export function isFeatureSupported(feature) {
  * Obtiene información del navegador
  * @returns {Object} Información del navegador
  */
-export function getBrowserInfo() {
+function getBrowserInfo() {
     const userAgent = navigator.userAgent;
     let browser = "Unknown";
     let version = "Unknown";

@@ -3,6 +3,11 @@
  * Sistema de inventario - TP Integrador de Redes y Comunicación
  */
 
+// Hacer las funciones disponibles globalmente
+console.log("🔧 Inicializando window.API...");
+window.API = {};
+console.log("✅ window.API inicializado:", window.API);
+
 // Configuración de la API
 const API_BASE_URL = "/api";
 const API_ENDPOINTS = {
@@ -113,7 +118,7 @@ async function apiRequest(url, options = {}) {
  * @param {string} password - Contraseña
  * @returns {Promise<Object>} Respuesta del servidor
  */
-export async function login(username, password) {
+async function login(username, password) {
     const response = await apiRequest(API_ENDPOINTS.LOGIN, {
         method: "POST",
         body: JSON.stringify({ username, password })
@@ -127,11 +132,15 @@ export async function login(username, password) {
     return response;
 }
 
+// Hacer disponible globalmente
+window.API.login = login;
+console.log("🔐 Función login asignada a window.API");
+
 /**
  * Cierra la sesión del usuario
  * @returns {Promise<Object>} Respuesta del servidor
  */
-export async function logout() {
+async function logout() {
     const response = await apiRequest(API_ENDPOINTS.LOGOUT, {
         method: "POST"
     });
@@ -145,11 +154,14 @@ export async function logout() {
     return response;
 }
 
+// Hacer disponible globalmente
+window.API.logout = logout;
+
 /**
  * Obtiene información del usuario autenticado
  * @returns {Promise<Object>} Información del usuario
  */
-export async function getCurrentUser() {
+async function getCurrentUser() {
     const response = await apiRequest(API_ENDPOINTS.ME, {
         method: "GET"
     });
@@ -162,15 +174,21 @@ export async function getCurrentUser() {
     return response;
 }
 
+// Hacer disponible globalmente
+window.API.getCurrentUser = getCurrentUser;
+
 /**
  * Verifica el estado de autenticación
  * @returns {Promise<Object>} Estado de autenticación
  */
-export async function getAuthStatus() {
+async function getAuthStatus() {
     return await apiRequest(API_ENDPOINTS.STATUS, {
         method: "GET"
     });
 }
+
+// Hacer disponible globalmente
+window.API.getAuthStatus = getAuthStatus;
 
 // ============================================================================
 // FUNCIONES DE PRODUCTOS
@@ -180,7 +198,7 @@ export async function getAuthStatus() {
  * Obtiene todos los productos
  * @returns {Promise<Object>} Lista de productos
  */
-export async function getProducts() {
+async function getProducts() {
     const response = await apiRequest(API_ENDPOINTS.PRODUCTS, {
         method: "GET"
     });
@@ -193,23 +211,29 @@ export async function getProducts() {
     return response;
 }
 
+// Hacer disponible globalmente
+window.API.getProducts = getProducts;
+
 /**
  * Obtiene un producto específico por ID
  * @param {number} id - ID del producto
  * @returns {Promise<Object>} Producto
  */
-export async function getProduct(id) {
+async function getProduct(id) {
     return await apiRequest(`${API_ENDPOINTS.PRODUCTS}/${id}`, {
         method: "GET"
     });
 }
+
+// Hacer disponible globalmente
+window.API.getProduct = getProduct;
 
 /**
  * Crea un nuevo producto
  * @param {Object} productData - Datos del producto
  * @returns {Promise<Object>} Respuesta del servidor
  */
-export async function createProduct(productData) {
+async function createProduct(productData) {
     const response = await apiRequest(API_ENDPOINTS.PRODUCTS, {
         method: "POST",
         body: JSON.stringify(productData)
@@ -223,13 +247,16 @@ export async function createProduct(productData) {
     return response;
 }
 
+// Hacer disponible globalmente
+window.API.createProduct = createProduct;
+
 /**
  * Actualiza un producto existente
  * @param {number} id - ID del producto
  * @param {Object} productData - Datos a actualizar
  * @returns {Promise<Object>} Respuesta del servidor
  */
-export async function updateProduct(id, productData) {
+async function updateProduct(id, productData) {
     const response = await apiRequest(`${API_ENDPOINTS.PRODUCTS}/${id}`, {
         method: "PUT",
         body: JSON.stringify(productData)
@@ -243,12 +270,15 @@ export async function updateProduct(id, productData) {
     return response;
 }
 
+// Hacer disponible globalmente
+window.API.updateProduct = updateProduct;
+
 /**
  * Elimina un producto
  * @param {number} id - ID del producto
  * @returns {Promise<Object>} Respuesta del servidor
  */
-export async function deleteProduct(id) {
+async function deleteProduct(id) {
     const response = await apiRequest(`${API_ENDPOINTS.PRODUCTS}/${id}`, {
         method: "DELETE"
     });
@@ -261,16 +291,22 @@ export async function deleteProduct(id) {
     return response;
 }
 
+// Hacer disponible globalmente
+window.API.deleteProduct = deleteProduct;
+
 /**
  * Busca productos por nombre o SKU
  * @param {string} query - Término de búsqueda
  * @returns {Promise<Object>} Resultados de búsqueda
  */
-export async function searchProductsAPI(query) {
+async function searchProductsAPI(query) {
     return await apiRequest(`${API_ENDPOINTS.PRODUCT_SEARCH}/${encodeURIComponent(query)}`, {
         method: "GET"
     });
 }
+
+// Hacer disponible globalmente
+window.API.searchProductsAPI = searchProductsAPI;
 
 // ============================================================================
 // FUNCIONES DEL SISTEMA
@@ -280,21 +316,27 @@ export async function searchProductsAPI(query) {
  * Verifica la salud del servidor
  * @returns {Promise<Object>} Estado del servidor
  */
-export async function checkServerHealth() {
+async function checkServerHealth() {
     return await apiRequest(API_ENDPOINTS.HEALTH, {
         method: "GET"
     });
 }
 
+// Hacer disponible globalmente
+window.API.checkServerHealth = checkServerHealth;
+
 /**
  * Obtiene información del sistema
  * @returns {Promise<Object>} Información del sistema
  */
-export async function getSystemInfo() {
+async function getSystemInfo() {
     return await apiRequest(API_ENDPOINTS.INFO, {
         method: "GET"
     });
 }
+
+// Hacer disponible globalmente
+window.API.getSystemInfo = getSystemInfo;
 
 // ============================================================================
 // FUNCIONES DE UTILIDAD
@@ -304,43 +346,55 @@ export async function getSystemInfo() {
  * Verifica si el usuario está autenticado
  * @returns {boolean} Estado de autenticación
  */
-export function isAuthenticated() {
+function isAuthenticated() {
     const user = sessionStorage.getItem("user");
     return user !== null;
 }
+
+// Hacer disponible globalmente
+window.API.isAuthenticated = isAuthenticated;
 
 /**
  * Obtiene el usuario actual desde el cache local
  * @returns {Object|null} Usuario actual o null
  */
-export function getCurrentUserLocal() {
+function getCurrentUserLocal() {
     const user = sessionStorage.getItem("user");
     return user ? JSON.parse(user) : null;
 }
+
+// Hacer disponible globalmente
+window.API.getCurrentUserLocal = getCurrentUserLocal;
 
 /**
  * Obtiene productos desde el cache local
  * @returns {Array|null} Lista de productos o null
  */
-export function getProductsLocal() {
+function getProductsLocal() {
     const products = sessionStorage.getItem("products");
     return products ? JSON.parse(products) : null;
 }
 
+// Hacer disponible globalmente
+window.API.getProductsLocal = getProductsLocal;
+
 /**
  * Limpia el cache local
  */
-export function clearLocalCache() {
+function clearLocalCache() {
     sessionStorage.removeItem("user");
     sessionStorage.removeItem("products");
 }
+
+// Hacer disponible globalmente
+window.API.clearLocalCache = clearLocalCache;
 
 /**
  * Maneja errores de red de manera consistente
  * @param {Error} error - Error capturado
  * @returns {Object} Error formateado
  */
-export function handleNetworkError(error) {
+function handleNetworkError(error) {
     if (error.name === "TypeError" && error.message.includes("fetch")) {
         return {
             success: false,
@@ -356,10 +410,13 @@ export function handleNetworkError(error) {
     };
 }
 
+// Hacer disponible globalmente
+window.API.handleNetworkError = handleNetworkError;
+
 /**
  * Configura interceptores para manejar errores globalmente
  */
-export function setupApiInterceptors() {
+function setupApiInterceptors() {
     // Interceptor para peticiones fallidas
     window.addEventListener("unhandledrejection", function(event) {
         console.error("Promesa rechazada no manejada:", event.reason);
@@ -376,3 +433,9 @@ export function setupApiInterceptors() {
 
 // Inicializar interceptores cuando se carga el módulo
 setupApiInterceptors();
+
+// Hacer disponible globalmente
+window.API.setupApiInterceptors = setupApiInterceptors;
+
+// Log final de confirmación
+console.log("🎯 API completamente cargada. Funciones disponibles:", Object.keys(window.API));
