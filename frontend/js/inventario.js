@@ -6,6 +6,12 @@ let currentUser = null;
 let products = [];
 let editingProductId = null;
 
+// Variables de paginación
+let currentPage = 1;
+let pageSize = 10;
+let totalPages = 1;
+let filteredProducts = [];
+
 // Inicialización de la página
 document.addEventListener("DOMContentLoaded", function() {
     console.log("🚀 Página de inventario cargada");
@@ -76,7 +82,6 @@ function setupEventListeners() {
     
     // Botones de admin
     document.getElementById("addProductBtn").addEventListener("click", showAddProductModal);
-    document.getElementById("exportBtn").addEventListener("click", handleExport);
     
     // Modal de producto
     document.getElementById("closeModalBtn").addEventListener("click", hideProductModal);
@@ -87,6 +92,13 @@ function setupEventListeners() {
     document.getElementById("closeDeleteModalBtn").addEventListener("click", hideDeleteModal);
     document.getElementById("cancelDeleteBtn").addEventListener("click", hideDeleteModal);
     document.getElementById("confirmDeleteBtn").addEventListener("click", handleDeleteConfirm);
+    
+    // Paginación
+    document.getElementById("firstPageBtn").addEventListener("click", () => goToPage(1));
+    document.getElementById("prevPageBtn").addEventListener("click", () => goToPage(currentPage - 1));
+    document.getElementById("nextPageBtn").addEventListener("click", () => goToPage(currentPage + 1));
+    document.getElementById("lastPageBtn").addEventListener("click", () => goToPage(totalPages));
+    document.getElementById("pageSizeSelect").addEventListener("change", handlePageSizeChange);
     
     console.log("✅ Eventos configurados");
 }
@@ -99,7 +111,9 @@ async function loadProducts() {
         
         if (response.success) {
             products = response.data.products;
+            filteredProducts = [...products];
             console.log(`✅ ${products.length} productos cargados`);
+            updatePagination();
             updateProductsTable();
             updateStats(response.data.summary);
         } else {
@@ -136,7 +150,7 @@ function updateProductsTable() {
     const tbody = document.getElementById("productsTableBody");
     tbody.innerHTML = "";
     
-    if (products.length === 0) {
+    if (filteredProducts.length === 0) {
         tbody.innerHTML = `
             <tr>
                 <td colspan="8" class="no-products">
@@ -147,7 +161,23 @@ function updateProductsTable() {
         return;
     }
     
-    products.forEach(product => {
+    // Calcular productos de la página actual
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const currentPageProducts = filteredProducts.slice(startIndex, endIndex);
+    
+    if (currentPageProducts.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" class="no-products">
+                    No hay productos en esta página
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    currentPageProducts.forEach(product => {
         const row = createProductRow(product);
         tbody.appendChild(row);
     });
@@ -188,15 +218,63 @@ function updateStats(summary) {
     // Si no hay summary, calcular desde los productos
     if (!summary) {
         summary = {
-            totalProducts: products.length,
-            totalQuantity: products.reduce((sum, p) => sum + p.qty, 0),
-            totalValue: products.reduce((sum, p) => sum + (p.qty * p.price), 0)
+            totalProducts: filteredProducts.length,
+            totalValue: filteredProducts.reduce((sum, p) => sum + (p.qty * p.price), 0)
         };
     }
     
     document.getElementById("totalProducts").textContent = summary.totalProducts;
-    document.getElementById("totalQuantity").textContent = summary.totalQuantity;
     document.getElementById("totalValue").textContent = `$${formatPrice(summary.totalValue)}`;
+}
+
+// ============================================================================
+// FUNCIONES DE PAGINACIÓN
+// ============================================================================
+
+function updatePagination() {
+    totalPages = Math.ceil(filteredProducts.length / pageSize);
+    
+    // Asegurar que la página actual sea válida
+    if (currentPage > totalPages) {
+        currentPage = totalPages || 1;
+    }
+    
+    // Actualizar información de paginación
+    const startIndex = (currentPage - 1) * pageSize + 1;
+    const endIndex = Math.min(currentPage * pageSize, filteredProducts.length);
+    const totalItems = filteredProducts.length;
+    
+    document.getElementById("paginationInfo").textContent = 
+        `Mostrando ${startIndex} a ${endIndex} de ${totalItems} productos`;
+    document.getElementById("currentPage").textContent = currentPage;
+    document.getElementById("totalPages").textContent = totalPages;
+    
+    // Actualizar estado de botones
+    document.getElementById("firstPageBtn").disabled = currentPage === 1;
+    document.getElementById("prevPageBtn").disabled = currentPage === 1;
+    document.getElementById("nextPageBtn").disabled = currentPage === totalPages;
+    document.getElementById("lastPageBtn").disabled = currentPage === totalPages;
+    
+    // Actualizar selector de tamaño de página
+    document.getElementById("pageSizeSelect").value = pageSize;
+}
+
+function goToPage(page) {
+    if (page < 1 || page > totalPages) return;
+    
+    currentPage = page;
+    updateProductsTable();
+    updatePagination();
+}
+
+function handlePageSizeChange(e) {
+    const newPageSize = parseInt(e.target.value);
+    if (newPageSize !== pageSize) {
+        pageSize = newPageSize;
+        currentPage = 1; // Volver a la primera página
+        updatePagination();
+        updateProductsTable();
+    }
 }
 
 // Funciones de utilidad
@@ -266,6 +344,9 @@ async function searchProducts(query) {
         
         if (response.success) {
             products = response.data.products;
+            filteredProducts = [...products];
+            currentPage = 1; // Volver a la primera página en búsquedas
+            updatePagination();
             updateProductsTable();
             updateStats();
         } else {
@@ -284,22 +365,98 @@ function handleSort() {
     const sortBy = document.getElementById("sortSelect").value;
     console.log("📊 Ordenando productos por:", sortBy);
     
-    products.sort((a, b) => {
+    // Crear una copia para no modificar el array original
+    const productsToSort = [...filteredProducts];
+    
+    // Función de comparación mejorada
+    const compareProducts = (a, b) => {
+        let aValue, bValue;
+        
         switch (sortBy) {
             case "name":
-                return a.name.localeCompare(b.name);
+                // Ordenamiento alfabético insensible a mayúsculas/minúsculas
+                aValue = (a.name || "").toLowerCase().trim();
+                bValue = (b.name || "").toLowerCase().trim();
+                return aValue.localeCompare(bValue, 'es', { sensitivity: 'base' });
+                
             case "sku":
-                return a.sku.localeCompare(b.sku);
+                // Ordenamiento alfabético para SKU
+                aValue = (a.sku || "").toLowerCase().trim();
+                bValue = (b.sku || "").toLowerCase().trim();
+                return aValue.localeCompare(bValue, 'es', { sensitivity: 'base' });
+                
             case "qty":
-                return a.qty - b.qty;
+                // Ordenamiento numérico para cantidad
+                aValue = parseInt(a.qty) || 0;
+                bValue = parseInt(b.qty) || 0;
+                if (aValue === bValue) {
+                    // Si las cantidades son iguales, ordenar por nombre
+                    return (a.name || "").toLowerCase().localeCompare((b.name || "").toLowerCase(), 'es');
+                }
+                return aValue - bValue;
+                
             case "price":
-                return a.price - b.price;
+                // Ordenamiento numérico para precio
+                aValue = parseFloat(a.price) || 0;
+                bValue = parseFloat(b.price) || 0;
+                if (aValue === bValue) {
+                    // Si los precios son iguales, ordenar por nombre
+                    return (a.name || "").toLowerCase().localeCompare((b.name || "").toLowerCase(), 'es');
+                }
+                return aValue - bValue;
+                
             default:
                 return 0;
         }
-    });
+    };
     
-    updateProductsTable();
+    // Aplicar ordenamiento con manejo de errores
+    try {
+        productsToSort.sort(compareProducts);
+        filteredProducts = productsToSort;
+        
+        // Actualizar la interfaz
+        currentPage = 1; // Volver a la primera página al ordenar
+        updatePagination();
+        updateProductsTable();
+        
+        // Mostrar indicador de ordenamiento
+        showSortIndicator(sortBy);
+        
+        // Mostrar notificación de ordenamiento exitoso
+        showNotification(`Productos ordenados por ${getSortDisplayName(sortBy)}`, "success");
+        
+    } catch (error) {
+        console.error("❌ Error al ordenar productos:", error);
+        showNotification("Error al ordenar los productos", "error");
+    }
+}
+
+// Función auxiliar para obtener el nombre de visualización del criterio de ordenamiento
+function getSortDisplayName(sortBy) {
+    const sortNames = {
+        'name': 'Nombre',
+        'sku': 'SKU',
+        'qty': 'Cantidad',
+        'price': 'Precio'
+    };
+    return sortNames[sortBy] || sortBy;
+}
+
+// Función para mostrar el indicador de ordenamiento
+function showSortIndicator(sortBy) {
+    const indicator = document.getElementById("sortIndicator");
+    const currentSortField = document.getElementById("currentSortField");
+    
+    if (indicator && currentSortField) {
+        currentSortField.textContent = getSortDisplayName(sortBy);
+        indicator.style.display = "inline-flex";
+        
+        // Ocultar el indicador después de 3 segundos
+        setTimeout(() => {
+            indicator.style.display = "none";
+        }, 3000);
+    }
 }
 
 function showAddProductModal() {
@@ -324,13 +481,12 @@ function showEditProductModal(product) {
 }
 
 function showProductModal() {
-    document.getElementById("productModal").style.display = "block";
-}
-
-function handleExport() {
-    console.log("📤 Exportando datos...");
-    // Implementar exportación (CSV, Excel, etc.)
-    showNotification("Función de exportación en desarrollo", "info");
+    const modal = document.getElementById("productModal");
+    modal.style.display = "block";
+    // Agregar clase para animación después de un pequeño delay
+    setTimeout(() => {
+        modal.classList.add("show");
+    }, 10);
 }
 
 function setSaveButtonLoading(loading) {
@@ -351,7 +507,11 @@ function setSaveButtonLoading(loading) {
 
 function hideProductModal() {
     console.log("❌ Ocultando modal de producto...");
-    document.getElementById("productModal").style.display = "none";
+    const modal = document.getElementById("productModal");
+    modal.classList.remove("show");
+    setTimeout(() => {
+        modal.style.display = "none";
+    }, 300); // Esperar a que termine la animación
 }
 
 async function handleProductSubmit(e) {
@@ -398,12 +558,21 @@ function showDeleteModal(product) {
     console.log("🗑️ Mostrando modal de eliminación...");
     editingProductId = product.id;
     document.getElementById("deleteModalProductName").textContent = product.name;
-    document.getElementById("deleteModal").style.display = "block";
+    const modal = document.getElementById("deleteModal");
+    modal.style.display = "block";
+    // Agregar clase para animación después de un pequeño delay
+    setTimeout(() => {
+        modal.classList.add("show");
+    }, 10);
 }
 
 function hideDeleteModal() {
     console.log("❌ Ocultando modal de eliminación...");
-    document.getElementById("deleteModal").style.display = "none";
+    const modal = document.getElementById("deleteModal");
+    modal.classList.remove("show");
+    setTimeout(() => {
+        modal.style.display = "none";
+    }, 300); // Esperar a que termine la animación
 }
 
 async function handleDeleteConfirm() {
