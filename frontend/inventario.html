@@ -28,9 +28,8 @@
         <div id="adminPanel" class="admin-panel" style="display: none;">
             <div class="admin-actions">
                 <button id="addProductBtn" class="btn btn-primary">➕ Agregar Producto</button>
-                <button id="exportBtn" class="btn btn-secondary">📤 Exportar</button>
-                    </div>
-                </div>
+            </div>
+        </div>
 
         <!-- Controles de Búsqueda y Ordenamiento -->
         <div class="controls">
@@ -46,7 +45,10 @@
                     <option value="qty">Cantidad</option>
                     <option value="price">Precio</option>
                 </select>
-                    </div>
+                <span id="sortIndicator" class="sort-indicator" style="display: none;">
+                    📊 Ordenado por: <strong id="currentSortField">Nombre</strong>
+                </span>
+            </div>
         </div>
 
         <!-- Estadísticas -->
@@ -56,40 +58,68 @@
                 <p id="totalProducts">0</p>
             </div>
             <div class="stat-card">
-                <h3>Total Cantidad</h3>
-                <p id="totalQuantity">0</p>
-                </div>
-                <div class="stat-card">
-                        <h3>Valor Total</h3>
+                <h3>Valor Total</h3>
                 <p id="totalValue">$0.00</p>
-                    </div>
-                </div>
+            </div>
+        </div>
 
         <!-- Tabla de Productos -->
-                <div class="table-container">
+        <div class="table-container">
             <table class="products-table">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>SKU</th>
-                                <th>Nombre</th>
-                                <th>Cantidad</th>
-                                <th>Precio</th>
-                                <th>Valor Total</th>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>SKU</th>
+                        <th>Nombre</th>
+                        <th>Cantidad</th>
+                        <th>Precio</th>
+                        <th>Valor Total</th>
                         <th>Última Actualización</th>
-                                <th id="actionsHeader" style="display: none;">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="productsTableBody">
-                            <tr>
-                                <td colspan="8" class="loading-message">
-                                    <div class="spinner"></div>
-                                    Cargando productos...
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                        <th id="actionsHeader" style="display: none;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="productsTableBody">
+                    <tr>
+                        <td colspan="8" class="loading-message">
+                            <div class="spinner"></div>
+                            Cargando productos...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <!-- Controles de Paginación -->
+            <div class="pagination-container">
+                <div class="pagination-info">
+                    <span id="paginationInfo">Mostrando 0 de 0 productos</span>
                 </div>
+                <div class="pagination-controls">
+                    <button id="firstPageBtn" class="btn btn-secondary pagination-btn" disabled>
+                        ⏮️ Primera
+                    </button>
+                    <button id="prevPageBtn" class="btn btn-secondary pagination-btn" disabled>
+                        ◀️ Anterior
+                    </button>
+                    <span class="page-numbers">
+                        <span id="currentPage">1</span> de <span id="totalPages">1</span>
+                    </span>
+                    <button id="nextPageBtn" class="btn btn-secondary pagination-btn" disabled>
+                        Siguiente ▶️
+                    </button>
+                    <button id="lastPageBtn" class="btn btn-secondary pagination-btn" disabled>
+                        Última ⏭️
+                    </button>
+                </div>
+                <div class="pagination-size">
+                    <label for="pageSizeSelect">Registros por página:</label>
+                    <select id="pageSizeSelect" class="page-size-select">
+                        <option value="10" selected>10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                    </select>
+                </div>
+            </div>
+        </div>
 
         <!-- Modal de Producto -->
         <div id="productModal" class="modal" style="display: none;">
