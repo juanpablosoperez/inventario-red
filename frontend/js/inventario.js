@@ -125,6 +125,7 @@ async function loadProducts() {
         showNotification("Error de conexión al cargar productos", "error");
     } finally {
         hideLoadingState();
+        console.log("📋 Carga de productos completada");
     }
 }
 
@@ -569,10 +570,16 @@ function showDeleteModal(product) {
 function hideDeleteModal() {
     console.log("❌ Ocultando modal de eliminación...");
     const modal = document.getElementById("deleteModal");
-    modal.classList.remove("show");
-    setTimeout(() => {
-        modal.style.display = "none";
-    }, 300); // Esperar a que termine la animación
+    
+    if (modal) {
+        modal.classList.remove("show");
+        setTimeout(() => {
+            modal.style.display = "none";
+            console.log("✅ Modal de eliminación ocultado correctamente");
+        }, 300); // Esperar a que termine la animación
+    } else {
+        console.error("❌ No se encontró el modal de eliminación");
+    }
 }
 
 async function handleDeleteConfirm() {
@@ -582,8 +589,10 @@ async function handleDeleteConfirm() {
         
         if (response.success) {
             showNotification("Producto eliminado correctamente", "success");
+            console.log("✅ Producto eliminado, cerrando modal y refrescando...");
             hideDeleteModal();
-            loadProducts();
+            await loadProducts(); // Esperar a que se carguen los productos
+            console.log("✅ Grilla refrescada después de eliminar");
         } else {
             showNotification("Error al eliminar: " + response.error, "error");
         }

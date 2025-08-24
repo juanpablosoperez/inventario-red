@@ -76,15 +76,25 @@ async function apiRequest(url, options = {}) {
         }
         
         // Para respuestas exitosas o errores 4xx
-        const data = await response.json();
+        let data = null;
+        
+        // Solo intentar parsear JSON si hay contenido
+        if (response.status !== 204 && response.headers.get('content-length') !== '0') {
+            try {
+                data = await response.json();
+            } catch (parseError) {
+                // Si no se puede parsear JSON, usar texto vacío
+                data = {};
+            }
+        }
         
         if (!response.ok) {
-            throw new Error(data.message || data.error || "Error en la petición");
+            throw new Error(data?.message || data?.error || "Error en la petición");
         }
         
         return {
             success: true,
-            data: data,
+            data: data || {},
             status: response.status
         };
         
