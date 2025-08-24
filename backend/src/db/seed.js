@@ -2,30 +2,37 @@ import { readFileSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import bcrypt from "bcrypt";
-import { getDb, closeDb } from "./connection.js";
+import { pool } from "./connection.js";
 
 // Obtener la ruta del directorio actual
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 /**
- * Inicializa la base de datos con el esquema y datos de prueba
+ * Inicializa la base de datos con datos de prueba
  */
 async function seedDatabase() {
+    let client;
+    
     try {
-        console.log("🌱 Iniciando seed de la base de datos...");
+        console.log("🌱 Iniciando seed de la base de datos PostgreSQL...");
         
-        // Leer el archivo de esquema
-        const schemaPath = join(__dirname, "schema.sql");
-        const schema = readFileSync(schemaPath, "utf8");
+        // Obtener conexión del pool
+        client = await pool.connect();
+        console.log("✅ Conectado a PostgreSQL");
         
-        // Obtener conexión a la base de datos
-        const db = await getDb();
+        // Verificar que las tablas existen
+        const tablesCheck = await client.query(`
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_name IN ('users', 'products')
+        `);
         
-        // Ejecutar el esquema
-        console.log("📋 Ejecutando esquema de la base de datos...");
-        await db.exec(schema);
-        console.log("✅ Esquema ejecutado correctamente");
+        if (tablesCheck.rows.length < 2) {
+            console.error("❌ Las tablas no existen. Ejecuta primero: npm run migrate");
+            process.exit(1);
+        }
         
         // Crear usuarios de prueba
         console.log("👥 Creando usuarios de prueba...");
@@ -34,8 +41,8 @@ async function seedDatabase() {
         const adminPassword = "admin123";
         const adminHash = await bcrypt.hash(adminPassword, 12);
         
-        await db.run(
-            "INSERT OR REPLACE INTO users (username, password_hash, role) VALUES (?, ?, ?)",
+        await client.query(
+            "INSERT INTO users (username, password_hash, role) VALUES ($1, $2, $3) ON CONFLICT (username) DO UPDATE SET password_hash = EXCLUDED.password_hash, role = EXCLUDED.role",
             ["admin", adminHash, "admin"]
         );
         
@@ -43,8 +50,8 @@ async function seedDatabase() {
         const viewerPassword = "viewer123";
         const viewerHash = await bcrypt.hash(viewerPassword, 12);
         
-        await db.run(
-            "INSERT OR REPLACE INTO users (username, password_hash, role) VALUES (?, ?, ?)",
+        await client.query(
+            "INSERT INTO users (username, password_hash, role) VALUES ($1, $2, $3) ON CONFLICT (username) DO UPDATE SET password_hash = EXCLUDED.password_hash, role = EXCLUDED.role",
             ["viewer", viewerHash, "viewer"]
         );
         
@@ -85,13 +92,20 @@ async function seedDatabase() {
         ];
         
         for (const product of sampleProducts) {
-            await db.run(
-                "INSERT OR REPLACE INTO products (sku, name, qty, price) VALUES (?, ?, ?, ?)",
+            await client.query(
+                "INSERT INTO products (sku, name, qty, price) VALUES ($1, $2, $3, $4) ON CONFLICT (sku) DO UPDATE SET name = EXCLUDED.name, qty = EXCLUDED.qty, price = EXCLUDED.price",
                 [product.sku, product.name, product.qty, product.price]
             );
         }
         
         console.log("✅ Productos de ejemplo creados correctamente");
+        
+        // Verificar datos insertados
+        const usersCount = await client.query("SELECT COUNT(*) as count FROM users");
+        const productsCount = await client.query("SELECT COUNT(*) as count FROM products");
+        
+        console.log(`📊 Usuarios en la base de datos: ${usersCount.rows[0].count}`);
+        console.log(`📊 Productos en la base de datos: ${productsCount.rows[0].count}`);
         
         // Mostrar credenciales creadas
         console.log("\n🔐 CREDENCIALES DE ACCESO:");
@@ -115,11 +129,12 @@ async function seedDatabase() {
         console.error("❌ Error durante el seed:", error);
         process.exit(1);
     } finally {
-        await closeDb();
+        if (client) {
+            client.release();
+        }
+        await pool.end();
     }
 }
 
 // Ejecutar el seed si se llama directamente
-if (import.meta.url === `file://${process.argv[1]}`) {
-    seedDatabase();
-}
+seedDatabase();

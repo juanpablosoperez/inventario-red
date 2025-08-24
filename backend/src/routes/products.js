@@ -62,11 +62,13 @@ router.get("/",
             const db = await getDb();
             
             // Obtener todos los productos ordenados por nombre
-            const products = await db.all(`
+            const productsResult = await db.query(`
                 SELECT id, sku, name, qty, price, created_at, updated_at
                 FROM products 
                 ORDER BY name ASC
             `);
+            
+            const products = productsResult.rows;
             
             // Calcular totales
             const totalProducts = products.length;
@@ -105,10 +107,12 @@ router.get("/:id",
             const db = await getDb();
             
             // Buscar producto por ID
-            const product = await db.get(
-                "SELECT id, sku, name, qty, price, created_at, updated_at FROM products WHERE id = ?",
+            const productResult = await db.query(
+                "SELECT id, sku, name, qty, price, created_at, updated_at FROM products WHERE id = $1",
                 [id]
             );
+            
+            const product = productResult.rows[0];
             
             if (!product) {
                 return res.status(404).json({
@@ -143,10 +147,12 @@ router.post("/",
             const db = await getDb();
             
             // Verificar si el SKU ya existe
-            const existingProduct = await db.get(
-                "SELECT id FROM products WHERE sku = ?",
+            const existingProductResult = await db.query(
+                "SELECT id FROM products WHERE sku = $1",
                 [sku]
             );
+            
+            const existingProduct = existingProductResult.rows[0];
             
             if (existingProduct) {
                 return res.status(409).json({
@@ -156,16 +162,18 @@ router.post("/",
             }
             
             // Insertar nuevo producto
-            const result = await db.run(
-                "INSERT INTO products (sku, name, qty, price) VALUES (?, ?, ?, ?)",
+            const result = await db.query(
+                "INSERT INTO products (sku, name, qty, price) VALUES ($1, $2, $3, $4) RETURNING id",
                 [sku, name, qty, price]
             );
             
             // Obtener el producto creado
-            const newProduct = await db.get(
-                "SELECT id, sku, name, qty, price, created_at, updated_at FROM products WHERE id = ?",
-                [result.lastID]
+            const newProductResult = await db.query(
+                "SELECT id, sku, name, qty, price, created_at, updated_at FROM products WHERE id = $1",
+                [result.rows[0].id]
             );
+            
+            const newProduct = newProductResult.rows[0];
             
             console.log(`✅ Producto creado: ${name} (SKU: ${sku}) por usuario ${req.user.username}`);
             
@@ -200,10 +208,12 @@ router.put("/:id",
             const db = await getDb();
             
             // Verificar si el producto existe
-            const existingProduct = await db.get(
-                "SELECT id, sku, name FROM products WHERE id = ?",
+            const existingProductResult = await db.query(
+                "SELECT id, sku, name FROM products WHERE id = $1",
                 [id]
             );
+            
+            const existingProduct = existingProductResult.rows[0];
             
             if (!existingProduct) {
                 return res.status(404).json({
@@ -215,19 +225,20 @@ router.put("/:id",
             // Construir query de actualización dinámicamente
             const updateFields = [];
             const updateValues = [];
+            let paramCount = 1;
             
             if (updateData.name !== undefined) {
-                updateFields.push("name = ?");
+                updateFields.push(`name = $${paramCount++}`);
                 updateValues.push(updateData.name);
             }
             
             if (updateData.qty !== undefined) {
-                updateFields.push("qty = ?");
+                updateFields.push(`qty = $${paramCount++}`);
                 updateValues.push(updateData.qty);
             }
             
             if (updateData.price !== undefined) {
-                updateFields.push("price = ?");
+                updateFields.push(`price = $${paramCount++}`);
                 updateValues.push(updateData.price);
             }
             
@@ -242,16 +253,18 @@ router.put("/:id",
             updateValues.push(id);
             
             // Ejecutar actualización
-            await db.run(
-                `UPDATE products SET ${updateFields.join(", ")} WHERE id = ?`,
+            await db.query(
+                `UPDATE products SET ${updateFields.join(", ")} WHERE id = $${paramCount}`,
                 updateValues
             );
             
             // Obtener el producto actualizado
-            const updatedProduct = await db.get(
-                "SELECT id, sku, name, qty, price, created_at, updated_at FROM products WHERE id = ?",
+            const updatedProductResult = await db.query(
+                "SELECT id, sku, name, qty, price, created_at, updated_at FROM products WHERE id = $1",
                 [id]
             );
+            
+            const updatedProduct = updatedProductResult.rows[0];
             
             console.log(`✅ Producto actualizado: ${updatedProduct.name} (ID: ${id}) por usuario ${req.user.username}`);
             
@@ -283,10 +296,12 @@ router.delete("/:id",
             const db = await getDb();
             
             // Verificar si el producto existe
-            const existingProduct = await db.get(
-                "SELECT id, sku, name FROM products WHERE id = ?",
+            const existingProductResult = await db.query(
+                "SELECT id, sku, name FROM products WHERE id = $1",
                 [id]
             );
+            
+            const existingProduct = existingProductResult.rows[0];
             
             if (!existingProduct) {
                 return res.status(404).json({
@@ -296,7 +311,7 @@ router.delete("/:id",
             }
             
             // Eliminar el producto
-            await db.run("DELETE FROM products WHERE id = ?", [id]);
+            await db.query("DELETE FROM products WHERE id = $1", [id]);
             
             console.log(`🗑️  Producto eliminado: ${existingProduct.name} (SKU: ${existingProduct.sku}) por usuario ${req.user.username}`);
             
@@ -324,12 +339,14 @@ router.get("/search/:query",
             const db = await getDb();
             
             // Buscar productos que coincidan con la consulta
-            const products = await db.all(`
+            const productsResult = await db.query(`
                 SELECT id, sku, name, qty, price, created_at, updated_at
                 FROM products 
-                WHERE name LIKE ? OR sku LIKE ?
+                WHERE name ILIKE $1 OR sku ILIKE $2
                 ORDER BY name ASC
             `, [`%${query}%`, `%${query}%`]);
+            
+            const products = productsResult.rows;
             
             res.status(200).json({
                 products,

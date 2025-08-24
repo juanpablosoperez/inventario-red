@@ -8,12 +8,12 @@ Implementar el TP Integrador de Redes y Comunicación: una aplicación web de in
 
 ## 🚀 **Características Implementadas**
 
-- **Backend robusto** con Express.js y SQLite
+- **Backend robusto** con Express.js y PostgreSQL
 - **Frontend responsivo** con interfaz moderna y roles diferenciados
 - **Autenticación segura** con bcrypt y sesiones HTTP-only
 - **Validación de datos** con Zod y sanitización de inputs
 - **Seguridad mejorada** con Helmet, headers de seguridad y protección XSS
-- **Base de datos SQLite** con esquema optimizado y triggers
+- **Base de datos PostgreSQL** con esquema optimizado y triggers
 - **Sistema de roles** (admin: CRUD completo, viewer: solo lectura)
 - **API REST** con validación, manejo de errores y logging
 - **Middleware de seguridad** para autenticación y autorización
@@ -57,7 +57,7 @@ inventario-red/
 ### Backend
 - **Node.js** - Runtime de JavaScript
 - **Express.js** - Framework web con middleware de seguridad
-- **SQLite** - Base de datos ligera con consultas preparadas
+- **PostgreSQL** - Base de datos robusta con consultas preparadas
 - **bcrypt** - Encriptación de contraseñas (salt rounds: 12)
 - **express-session** - Manejo de sesiones con cookies seguras
 - **Helmet** - Headers de seguridad HTTP
@@ -76,44 +76,218 @@ inventario-red/
 - Node.js (versión 16 o superior)
 - npm o yarn
 - Git
+- **Docker Desktop** (para PostgreSQL)
+- **DBeaver** (opcional, para administrar la base de datos)
 
-### Pasos de instalación
+### 🐘 **Migración de SQLite a PostgreSQL**
 
-1. **Clonar el repositorio**
-   ```bash
-   git clone <url-del-repositorio>
-   cd inventario-red
-   ```
+El proyecto ha sido migrado de SQLite a PostgreSQL para mejor escalabilidad y funcionalidades empresariales. Ver [MIGRATION_README.md](MIGRATION_README.md) para detalles completos.
 
-2. **Configurar variables de entorno**
-   ```bash
-   cd backend
-   cp env.example .env
-   # Editar .env con tus configuraciones
-   ```
+## 🎯 **Guía Completa de Inicialización**
 
-3. **Instalar dependencias del backend**
-   ```bash
-   npm install
-   ```
+### **PASO 1: Preparar el entorno**
 
-4. **Inicializar la base de datos**
-   ```bash
-   npm run seed
-   ```
+```bash
+# 1. Clonar el repositorio (si no lo tienes)
+git clone <url-del-repositorio>
+cd inventario-red/backend
 
-5. **Ejecutar el servidor**
-   ```bash
-   # Modo desarrollo (con nodemon)
-   npm run dev
-   
-   # Modo producción
-   npm start
-   ```
+# 2. Verificar que Docker esté corriendo
+docker --version
+docker-compose --version
+docker ps
+```
 
-6. **Acceder al frontend**
-   - Abrir `frontend/index.html` en tu navegador
-   - O servir los archivos estáticos desde un servidor web
+### **PASO 2: Iniciar PostgreSQL con Docker**
+
+```bash
+# Iniciar solo PostgreSQL (no todo el stack)
+docker-compose up -d postgres
+
+# Verificar que esté corriendo
+docker-compose ps postgres
+
+# Esperar unos segundos para que PostgreSQL esté listo
+# En Windows PowerShell:
+Start-Sleep -Seconds 15
+# En Linux/macOS:
+sleep 15
+```
+
+### **PASO 3: Configurar variables de entorno**
+
+```bash
+# Crear archivo .env limpio (evitar problemas de codificación)
+# En Windows PowerShell:
+Remove-Item .env -ErrorAction SilentlyContinue
+Copy-Item env.development .env
+
+# En Linux/macOS:
+rm -f .env
+cp env.development .env
+
+# Verificar el contenido
+Get-Content .env  # Windows
+cat .env          # Linux/macOS
+```
+
+**Contenido esperado del .env:**
+```env
+# Configuración del servidor
+PORT=3000
+NODE_ENV=development
+
+# Seguridad de sesiones
+SESSION_SECRET=cambia-esto-por-uno-largo-y-seguro-en-produccion
+
+# Configuración de PostgreSQL (Docker)
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=inventario_db
+DB_USER=postgres
+DB_PASSWORD=postgres123
+DB_SSL=false
+
+# Configuración de cookies
+COOKIE_SECURE=false
+COOKIE_HTTPONLY=true
+COOKIE_SAMESITE=lax
+COOKIE_MAX_AGE=86400000
+
+# Configuración de seguridad
+RATE_LIMIT_WINDOW_MS=900000
+RATE_LIMIT_MAX_REQUESTS=1000
+CORS_ORIGIN=*
+```
+
+### **PASO 4: Instalar dependencias**
+
+```bash
+# Instalar dependencias de Node.js
+npm install
+```
+
+### **PASO 5: Crear las tablas (Migración)**
+
+```bash
+# Ejecutar migración para crear el esquema
+npm run migrate
+```
+
+**Salida esperada:**
+```
+🚀 Iniciando migración a PostgreSQL...
+✅ Conectado a PostgreSQL
+📋 Ejecutando esquema de la base de datos...
+✅ Esquema ejecutado correctamente
+📊 Tablas creadas: [ 'products', 'users' ]
+
+🎉 Migración completada exitosamente!
+📝 Ahora puedes ejecutar: npm run seed
+```
+
+### **PASO 6: Poblar la base de datos (Seed)**
+
+```bash
+# Ejecutar seed para crear usuarios y productos de prueba
+npm run seed
+```
+
+**Salida esperada:**
+```
+🌱 Iniciando seed de la base de datos PostgreSQL...
+✅ Conectado a PostgreSQL
+👥 Creando usuarios de prueba...
+📦 Creando productos de ejemplo...
+✅ Productos de ejemplo creados correctamente
+📊 Usuarios en la base de datos: 2
+📊 Productos en la base de datos: 5
+
+🔐 CREDENCIALES DE ACCESO:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+👑 ADMIN:
+   Usuario: admin
+   Contraseña: admin123
+   Rol: admin (acceso completo)
+
+👁️  VIEWER:
+   Usuario: viewer
+   Contraseña: viewer123
+   Rol: viewer (solo lectura)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📊 PRODUCTOS CREADOS: 5
+🌐 Servidor listo para ejecutar con: npm run dev
+```
+
+### **PASO 7: Configurar DBeaver (Opcional pero recomendado)**
+
+#### **7.1: Descargar e instalar DBeaver**
+- Descargar desde: https://dbeaver.io/download/
+- Instalar DBeaver Community Edition
+
+#### **7.2: Crear nueva conexión**
+1. **Abrir DBeaver**
+2. **Nueva conexión** → **PostgreSQL**
+3. **Configuración:**
+   - **Host**: `localhost`
+   - **Port**: `5432`
+   - **Database**: `inventario_db`
+   - **Username**: `postgres`
+   - **Password**: `postgres123`
+
+#### **7.3: Verificar la conexión**
+1. **Conectar** a la base de datos
+2. **Expandir** `inventario_db` → `Schemas` → `public` → `Tables`
+3. **Verificar tablas**: `users` y `products`
+4. **Ver datos**: Clic derecho en tabla → `View Data`
+
+### **PASO 8: Iniciar el servidor**
+
+```bash
+# Iniciar servidor en modo desarrollo
+npm run dev
+```
+
+**Salida esperada:**
+```
+🚀 Sistema de Inventario iniciado
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🌐 Servidor ejecutándose en: http://localhost:3000
+🔧 Entorno: development
+📊 API disponible en: http://localhost:3000/api
+❤️  Healthcheck: http://localhost:3000/api/health
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔐 Credenciales de prueba:
+   👑 Admin: admin / admin123
+   👁️  Viewer: viewer / viewer123
+```
+
+### **PASO 9: Probar la aplicación**
+
+1. **Abrir navegador**: `http://localhost:3000`
+2. **Login con credenciales**:
+   - **Admin**: `admin` / `admin123` (acceso completo CRUD)
+   - **Viewer**: `viewer` / `viewer123` (solo lectura)
+
+## 📋 **Comandos en orden de ejecución**
+
+```bash
+# Secuencia completa de comandos
+cd inventario-red/backend
+docker-compose up -d postgres
+Start-Sleep -Seconds 15                    # Windows PowerShell
+# sleep 15                                # Linux/macOS
+Remove-Item .env -ErrorAction SilentlyContinue  # Windows
+# rm -f .env                              # Linux/macOS
+Copy-Item env.development .env            # Windows
+# cp env.development .env                 # Linux/macOS
+npm install
+npm run migrate
+npm run seed
+npm run dev
+```
 
 ## 📖 **Uso del Sistema**
 
@@ -121,6 +295,7 @@ inventario-red/
 
 - `npm run dev` - Ejecuta el servidor en modo desarrollo con nodemon
 - `npm start` - Ejecuta el servidor en modo producción
+- `npm run migrate` - Crea el esquema de la base de datos PostgreSQL
 - `npm run seed` - Inicializa la base de datos con datos de ejemplo
 - `npm run lint` - Verificación de código (placeholder)
 - `npm test` - Tests unitarios (placeholder)
@@ -129,6 +304,83 @@ inventario-red/
 
 - **👑 ADMIN**: `admin` / `admin123` (acceso completo CRUD)
 - **👁️ VIEWER**: `viewer` / `viewer123` (solo lectura)
+
+## 🔧 **Scripts adicionales disponibles**
+
+```bash
+# Desarrollo
+npm run dev              # Servidor con nodemon
+npm run migrate          # Crear esquema PostgreSQL
+npm run seed             # Poblar base de datos
+
+# Docker
+npm run dev:docker       # Iniciar todo con Docker
+npm run test:docker      # Ejecutar tests en Docker
+
+# Producción
+npm run prod:deploy      # Despliegue completo
+npm run prod:build       # Construir imagen Docker
+npm run prod:up          # Iniciar servicios de producción
+npm run prod:logs        # Ver logs de producción
+```
+
+## 🐛 **Solución de problemas comunes**
+
+### **Error: Docker no está corriendo**
+```bash
+# Verificar Docker Desktop
+docker ps
+# Si no funciona, abrir Docker Desktop y esperar
+```
+
+### **Error: Puerto ocupado**
+```bash
+# Cambiar puerto en .env
+PORT=3001
+```
+
+### **Error: Base de datos no conecta**
+```bash
+# Verificar que PostgreSQL esté corriendo
+docker-compose ps postgres
+# Ver logs si hay problemas
+docker-compose logs postgres
+```
+
+### **Error: Tablas no existen**
+```bash
+# Ejecutar migración nuevamente
+npm run migrate
+```
+
+### **Error: Archivo .env corrupto**
+```bash
+# Eliminar y recrear el archivo .env
+Remove-Item .env -ErrorAction SilentlyContinue  # Windows
+# rm -f .env                                   # Linux/macOS
+Copy-Item env.development .env                 # Windows
+# cp env.development .env                      # Linux/macOS
+```
+
+## ✅ **Checklist de verificación**
+
+- [ ] Docker Desktop corriendo
+- [ ] PostgreSQL iniciado (`docker-compose ps postgres`)
+- [ ] Archivo `.env` creado y configurado
+- [ ] Dependencias instaladas (`npm install`)
+- [ ] Tablas creadas (`npm run migrate`)
+- [ ] Datos insertados (`npm run seed`)
+- [ ] Servidor funcionando (`npm run dev`)
+- [ ] Aplicación accesible en `http://localhost:3000`
+- [ ] Login funcionando con admin/admin123
+- [ ] DBeaver conectado a la base de datos (opcional)
+
+## 🎯 **URLs importantes**
+
+- **Aplicación**: http://localhost:3000
+- **API**: http://localhost:3000/api
+- **Health Check**: http://localhost:3000/api/health
+- **pgAdmin** (opcional): http://localhost:8080
 
 ## 🔌 **API REST - Contrato**
 
@@ -213,12 +465,13 @@ http://localhost:3000/api
 
 ## 🗄️ **Base de Datos**
 
-### Esquema SQLite
-- **Tabla users**: `id`, `username` (UNIQUE), `password_hash`, `role` (CHECK)
-- **Tabla products**: `id`, `sku` (UNIQUE), `name`, `qty`, `price`, timestamps
+### Esquema PostgreSQL
+- **Tabla users**: `id` (SERIAL), `username` (VARCHAR UNIQUE), `password_hash`, `role` (CHECK)
+- **Tabla products**: `id` (SERIAL), `sku` (VARCHAR UNIQUE), `name`, `qty`, `price` (DECIMAL), timestamps
 - **Índices optimizados** para consultas frecuentes
 - **Triggers automáticos** para timestamps de modificación
 - **Constraints de integridad** (UNIQUE, CHECK, NOT NULL)
+- **Pool de conexiones** para mejor rendimiento
 
 ### Características
 - **Consultas preparadas** para prevenir SQL injection
@@ -373,7 +626,7 @@ curl -X POST http://localhost:3000/api/products \
 ## 🔄 **Estado del Proyecto**
 
 ### ✅ **Completado**
-- Backend funcional con Express.js y SQLite
+- Backend funcional con Express.js y PostgreSQL
 - Base de datos con esquema optimizado
 - Sistema de autenticación y autorización
 - API REST completa con validación
@@ -427,11 +680,11 @@ Si tienes alguna pregunta o necesitas ayuda:
 - [Documentación de Express.js](https://expressjs.com/)
 - [Guía de seguridad de Helmet](https://helmetjs.github.io/)
 - [Documentación de Zod](https://zod.dev/)
-- [SQLite Documentation](https://www.sqlite.org/docs.html)
+- [Documentación de PostgreSQL](https://www.postgresql.org/docs/)
 - [OWASP Security Guidelines](https://owasp.org/www-project-top-ten/)
 
 ---
 
 **Desarrollado con ❤️ para el TP Integrador de Redes y Comunicación**
 
-*Sistema de inventario seguro, escalable y listo para producción*
+*Sistema de inventario seguro, escalable y listo para producción con PostgreSQL*

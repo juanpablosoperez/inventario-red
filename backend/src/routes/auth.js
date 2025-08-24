@@ -39,10 +39,12 @@ router.post("/login",
             const db = await getDb();
             
             // Buscar usuario por username
-            const user = await db.get(
-                "SELECT id, username, password_hash, role FROM users WHERE username = ?",
+            const userResult = await db.query(
+                "SELECT id, username, password_hash, role FROM users WHERE username = $1",
                 [username]
             );
+            
+            const user = userResult.rows[0];
             
             // Verificar si el usuario existe
             if (!user) {
