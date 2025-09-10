@@ -141,8 +141,8 @@ NODE_ENV=development
 SESSION_SECRET=cambia-esto-por-uno-largo-y-seguro-en-produccion
 
 # Configuración de PostgreSQL (Docker)
-DB_HOST=localhost
-DB_PORT=5432
+DB_HOST=127.0.0.1
+DB_PORT=5433
 DB_NAME=inventario_db
 DB_USER=postgres
 DB_PASSWORD=postgres123
@@ -230,8 +230,8 @@ npm run seed
 1. **Abrir DBeaver**
 2. **Nueva conexión** → **PostgreSQL**
 3. **Configuración:**
-   - **Host**: `localhost`
-   - **Port**: `5432`
+   - **Host**: `127.0.0.1`
+   - **Port**: `5433`
    - **Database**: `inventario_db`
    - **Username**: `postgres`
    - **Password**: `postgres123`
@@ -688,3 +688,4 @@ Si tienes alguna pregunta o necesitas ayuda:
 **Desarrollado con ❤️ para el TP Integrador de Redes y Comunicación**
 
 *Sistema de inventario seguro, escalable y listo para producción con PostgreSQL*
+
